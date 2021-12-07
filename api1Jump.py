@@ -102,13 +102,13 @@ for x in range(0, len(labelArr)):
             trueNeg = totalLinks - totalALinks - falseNeg
 
             # Sensitivity = True Positive/(True Positive + False Negative)
-            sensitivity = truePos/(truePos + falseNeg)
+            sensitivity = round(truePos/(truePos + falseNeg),3)
 
             # Specificity = True Negative/(True Negative + False Positive)
-            specificity = trueNeg/(trueNeg + falsePos)
+            specificity = round(trueNeg/(trueNeg + falsePos),3)
 
             # Precision = True Positive/(True Positive + False Positive)
-            precision = truePos/(truePos + falseNeg)
+            precision = round(truePos/(truePos + falsePos),3)
 
             printArr.append([aLink, bLink, truePos, falsePos, trueNeg, falseNeg, sensitivity, specificity, precision])
 

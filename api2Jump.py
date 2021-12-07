@@ -115,6 +115,7 @@ for x in range(0, len(abLabelArr)):
 
             printArr.append([aLink, bLink, truePos, falsePos, trueNeg, falseNeg, sensitivity, specificity, precision])
 
+# Sort data by precision descending
 printArr = sorted(printArr, key=lambda x: x[8], reverse=True)
 printArr.insert(0, ["a-b", "a-c", "True Positive", "False Positive", "True Negative", "False Negative", "Sensitivity", "Specificity", "Precision"])
         
