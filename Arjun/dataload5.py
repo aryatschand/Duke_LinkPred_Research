@@ -13,8 +13,12 @@ drugDict = {}
 edgeDict = {}
 diseaseDict = {}
 
-dimensions = 2
+#dimensions = 100
 
+def dimensionTest():
+    print(fullCode(500))
+
+  
 
 def avg(lst):
     sumNum = 0
@@ -123,285 +127,330 @@ def reloadData(samples):
         data.write("\n")
     data.close()
 
-reloadData(5000)
-shell = "python3.8 transition.py --dimensions=" + str(dimensions)
-stream = os.popen(shell)
-time.sleep(5)
+def fullCode(dimensions):
 
-shell = "python3.8 edge2vec.py --dimensions=" + str(dimensions)
-stream = os.popen(shell)
-time.sleep(5)
+    from posixpath import split
+    from numpy import average, tri
+    import requests
+    import json
+    import os
+    import matplotlib.pyplot as plt
+    import pandas as pd
+    import time
 
-file1 = open('vector.txt', 'r')
-lines = file1.readlines()
- 
-count = 0
-first = True
+    reloadData(5000)
+    shell = "python3.8 transition.py --dimensions=" + str(dimensions)
+    stream = os.popen(shell)
+    time.sleep(5)
 
-treatPoints = []
-causePoints = []
-for x in range(0, dimensions+1):
-    treatPoints.append([])
-    causePoints.append([])
-label = []
+    shell = "python3.8 edge2vec.py --dimensions=" + str(dimensions)
+    stream = os.popen(shell)
+    time.sleep(5)
 
-points = []
-
-# Strips the newline character
-for line in lines:
-    count += 1
-
-    if first:
-        first = False
-    else:
-        lineSplit = line.split(" ")
-                
-        good = False
-        edgeType = ""
-        for x in range(0, len([*edgeDict])):
-            
-            if int(lineSplit[0]) in edgeDict[[*edgeDict][x]]:
-                good = True
-                edgeType = [*edgeDict][x]
-                break
-        if good:
-            label.append(edgeType)
-            temp = []
-            for x in range(1, len(lineSplit)):
-                temp.append(float(lineSplit[x].replace("\n", "")))
-            if edgeType == "causes":
-                temp.append(1)
-            else:
-                temp.append(-1)
-            points.append(temp)
-
-columns = []
-for x in range(0, dimensions):
-    columns.append(str(x))
-columns.append("edge")
-
-import numpy as np
-dataset = pd.DataFrame(np.array(points), columns=columns)
-
-X = dataset.iloc[:, :-1].values
-y = dataset.iloc[:, dimensions].values
-
-from sklearn.model_selection import train_test_split
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.30)
-from sklearn.preprocessing import StandardScaler
-scaler = StandardScaler()
-scaler.fit(X_train)
-
-#X_train = scaler.transform(X_train)
-#X_test = scaler.transform(X_test)
-
-from sklearn.neighbors import KNeighborsClassifier
-classifier = KNeighborsClassifier(n_neighbors=5)
-classifier.fit(X_train, y_train)
-
-y_pred = classifier.predict(X_test)
-
-from sklearn.metrics import classification_report, confusion_matrix
-print(confusion_matrix(y_test, y_pred))
-print(classification_report(y_test, y_pred))
-
-
-from sklearn.naive_bayes import GaussianNB
-gnb = GaussianNB()
-gnb.fit(X_train, y_train)
-
-print('Accuracy of GNB classifier on training set: {:.2f}'
-     .format(gnb.score(X_train, y_train)))
-print('Accuracy of GNB classifier on test set: {:.2f}'
-     .format(gnb.score(X_test, y_test)))
-
-from sklearn.neighbors import KNeighborsClassifier
-knn = KNeighborsClassifier()
-knn.fit(X_train, y_train)
-print('Accuracy of K-NN classifier on training set: {:.2f}'
-     .format(knn.score(X_train, y_train)))
-print('Accuracy of K-NN classifier on test set: {:.2f}'
-     .format(knn.score(X_test, y_test)))
-
-from sklearn.tree import DecisionTreeClassifier
-clf = DecisionTreeClassifier().fit(X_train, y_train)
-print('Accuracy of Decision Tree classifier on training set: {:.2f}'
-     .format(clf.score(X_train, y_train)))
-print('Accuracy of Decision Tree classifier on test set: {:.2f}'
-     .format(clf.score(X_test, y_test)))
-
-from sklearn.svm import SVC
-svm = SVC()
-svm.fit(X_train, y_train)
-
-print('Accuracy of SVM classifier on training set: {:.2f}'
-     .format(svm.score(X_train, y_train)))
-print('Accuracy of SVM classifier on test set: {:.2f}'
-     .format(svm.score(X_test, y_test)))
-
-
-import pandas as pd
-import seaborn as sns
-
-xPoint = []
-yPoint = []
-
-maxVals = []
-maxCause = 0
-for x in range(0, len(points)):
-    tempPoints = points[x][0:-1]
-    maxVals.append(abs(max(tempPoints, key=abs)))
-        
-    #print(points[x])
-    #xPoint.append(points[x][10])
-    yPoint.append(points[x][-1])
-
-    if points[x][-1] == 1 and abs(max(tempPoints, key=abs)) > maxCause:
-        maxCause = abs(max(tempPoints, key=abs))
-
-# cause under threshold, total cause, treats under threshold, total treats
-totalArray = [0, 0, 0, 0]
-for x in range(0, len(maxVals)):
-    if label[x] == "causes":
-        totalArray[1]+=1
-        if maxVals[x] <= maxCause:
-            totalArray[0]+=1
-    else:
-        totalArray[3]+=1
-        if maxVals[x] <= maxCause:
-            totalArray[2]+=1
-
-print(1-float(totalArray[2]/float(totalArray[3])))
+    file1 = open('vector.txt', 'r')
+    lines = file1.readlines()
     
+    count = 0
+    first = True
 
-#print(maxVals)
-#print(len(label))
-#print(totalArray)
+    treatPoints = []
+    causePoints = []
+    for x in range(0, dimensions+1):
+        treatPoints.append([])
+        causePoints.append([])
+    label = []
 
-import pandas as pd
-import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression, LinearRegression
-from sklearn.multiclass import OneVsRestClassifier
-from sklearn import metrics
-import matplotlib.pyplot as plt
+    points = []
 
-intEdges = []
-for x in range(0, len(points)):
-    intEdges.append(points[x][-1])
+    # Strips the newline character
+    for line in lines:
+        count += 1
 
-tempThreshold = max(maxVals)
-steps = tempThreshold/100.0
-fpr = []
-tpr = []
-for x in range(0, len(maxVals)):
-    # cause over threshold, total cause, treats over threshold, total treats
+        if first:
+            first = False
+        else:
+            lineSplit = line.split(" ")
+                    
+            good = False
+            edgeType = ""
+            for x in range(0, len([*edgeDict])):
+                
+                if int(lineSplit[0]) in edgeDict[[*edgeDict][x]]:
+                    good = True
+                    edgeType = [*edgeDict][x]
+                    break
+            if good:
+                label.append(edgeType)
+                temp = []
+                for x in range(1, len(lineSplit)):
+                    temp.append(float(lineSplit[x].replace("\n", "")))
+                if edgeType == "causes":
+                    temp.append(1)
+                else:
+                    temp.append(-1)
+                points.append(temp)
+
+    columns = []
+    for x in range(0, dimensions):
+        columns.append(str(x))
+    columns.append("edge")
+
+    import numpy as np
+    dataset = pd.DataFrame(np.array(points), columns=columns)
+
+    X = dataset.iloc[:, :-1].values
+    y = dataset.iloc[:, dimensions].values
+
+    from sklearn.model_selection import train_test_split
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.30)
+    from sklearn.preprocessing import StandardScaler
+    scaler = StandardScaler()
+    scaler.fit(X_train)
+
+    #X_train = scaler.transform(X_train)
+    #X_test = scaler.transform(X_test)
+
+    from sklearn.neighbors import KNeighborsClassifier
+    classifier = KNeighborsClassifier(n_neighbors=5)
+    classifier.fit(X_train, y_train)
+
+    y_pred = classifier.predict(X_test)
+
+    from sklearn.metrics import classification_report, confusion_matrix
+    print(confusion_matrix(y_test, y_pred))
+    print(classification_report(y_test, y_pred))
+
+
+    from sklearn.naive_bayes import GaussianNB
+    gnb = GaussianNB()
+    gnb.fit(X_train, y_train)
+
+    print('Accuracy of GNB classifier on training set: {:.2f}'
+        .format(gnb.score(X_train, y_train)))
+    print('Accuracy of GNB classifier on test set: {:.2f}'
+        .format(gnb.score(X_test, y_test)))
+
+    from sklearn.neighbors import KNeighborsClassifier
+    knn = KNeighborsClassifier()
+    knn.fit(X_train, y_train)
+    print('Accuracy of K-NN classifier on training set: {:.2f}'
+        .format(knn.score(X_train, y_train)))
+    print('Accuracy of K-NN classifier on test set: {:.2f}'
+        .format(knn.score(X_test, y_test)))
+
+    from sklearn.tree import DecisionTreeClassifier
+    clf = DecisionTreeClassifier().fit(X_train, y_train)
+    print('Accuracy of Decision Tree classifier on training set: {:.2f}'
+        .format(clf.score(X_train, y_train)))
+    print('Accuracy of Decision Tree classifier on test set: {:.2f}'
+        .format(clf.score(X_test, y_test)))
+
+    from sklearn.svm import SVC
+    svm = SVC()
+    svm.fit(X_train, y_train)
+
+    print('Accuracy of SVM classifier on training set: {:.2f}'
+        .format(svm.score(X_train, y_train)))
+    print('Accuracy of SVM classifier on test set: {:.2f}'
+        .format(svm.score(X_test, y_test)))
+
+
+    import pandas as pd
+    import seaborn as sns
+
+    xPoint = []
+    yPoint = []
+
+    maxVals = []
+    maxCause = 0
+    for x in range(0, len(points)):
+        tempPoints = points[x][0:-1]
+        maxVals.append(abs(max(tempPoints, key=abs)))
+            
+        #print(points[x])
+        #xPoint.append(points[x][10])
+        yPoint.append(points[x][-1])
+
+        if points[x][-1] == 1 and abs(max(tempPoints, key=abs)) > maxCause:
+            maxCause = abs(max(tempPoints, key=abs))
+
+    # cause under threshold, total cause, treats under threshold, total treats
     totalArray = [0, 0, 0, 0]
-    tempThreshold = maxVals[len(maxVals)-1-x]
     for x in range(0, len(maxVals)):
         if label[x] == "causes":
             totalArray[1]+=1
-            if maxVals[x] >= tempThreshold:
+            if maxVals[x] <= maxCause:
                 totalArray[0]+=1
         else:
             totalArray[3]+=1
-            if maxVals[x] >= tempThreshold:
+            if maxVals[x] <= maxCause:
                 totalArray[2]+=1
 
-    
 
-    tpr.append(float(totalArray[0]+totalArray[2])/float(totalArray[1]+totalArray[3]))
-    fpr.append(float(totalArray[0])/float(totalArray[0]+totalArray[2]))
+    falsepos = []
+    truepos = []
 
-    #tempThreshold-=steps
-#plt.plot(tpr,fpr)
-#plt.ylabel('True Positive Rate')
-#plt.xlabel('False Positive Rate')
-#plt.show()
+    P = label.count("treats")
+    N = label.count("causes")
 
-from sklearn.model_selection import GridSearchCV  
-from sklearn.linear_model import SGDClassifier 
-from sklearn.metrics import roc_curve, auc
+    sortThresholds = maxVals.copy()
+    sortThresholds.sort()
 
+    for threshold in sortThresholds:
+        FP = 0
+        TP = 0
 
+        for x in range(len(maxVals)):
+            if (maxVals[x] >= threshold):
+                if (label[x] == "treats"):
+                    TP = TP+1
+                else:
+                    FP = FP+1
+        if FP == 1:
+            return float(TP)/float(P)
+        
+        falsepos.append(float(FP)/float(N))
+        truepos.append(float(TP)/float(P))
 
+    auc = -1 * np.trapz(truepos, falsepos)
 
-X_train,X_test,y_train,y_test = train_test_split(maxVals,intEdges,test_size=0.3,random_state=0) 
-X_train= np.array(X_train).reshape(-1, 1)
-X_test = np.array(X_test).reshape(-1, 1)
-
-model = SGDClassifier(loss='hinge')
-model.fit(X_train, y_train)
-# roc_auc_score(y_true, y_score) the 2nd parameter should be probability estimates of the positive class, not the predicted outputs.
-
-y_train_pred = model.decision_function(X_train)    
-y_test_pred = model.decision_function(X_test) 
-
-train_fpr, train_tpr, tr_thresholds = roc_curve(y_train, y_train_pred)
-test_fpr, test_tpr, te_thresholds = roc_curve(y_test, y_test_pred)
-
-plt.grid()
-
-plt.plot(train_fpr, train_tpr, label=" AUC TRAIN ="+str(auc(train_fpr, train_tpr)))
-plt.plot(test_fpr, test_tpr, label=" AUC TEST ="+str(auc(test_fpr, test_tpr)))
-plt.plot([0,1],[0,1],'g--')
-plt.legend()
-plt.xlabel("False Positive Rate")
-plt.ylabel("True Positive Rate")
-plt.title("AUC(ROC curve)")
-plt.grid(color='black', linestyle='-', linewidth=0.5)
-plt.show()
+    plt.plot(falsepos, truepos, linestyle='--', marker='o', color='darkorange', lw = 2, label='ROC curve', clip_on=False)
+    plt.plot([0, 1], [0, 1], color='navy', linestyle='--')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.0])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('ROC curve, AUC = %.2f'%auc)
+    plt.legend(loc="lower right")
+    plt.savefig('AUC_example.png')
+    #plt.show()
 
 
+    import pandas as pd
+    import numpy as np
+    from sklearn.model_selection import train_test_split
+    from sklearn.linear_model import LogisticRegression, LinearRegression
+    from sklearn.multiclass import OneVsRestClassifier
+    from sklearn import metrics
+    import matplotlib.pyplot as plt
+
+    intEdges = []
+    for x in range(0, len(points)):
+        intEdges.append(points[x][-1])
+
+    tempThreshold = max(maxVals)
+    steps = tempThreshold/100.0
+    fpr = []
+    tpr = []
+    for x in range(0, len(maxVals)):
+        # cause over threshold, total cause, treats over threshold, total treats
+        totalArray = [0, 0, 0, 0]
+        tempThreshold = maxVals[len(maxVals)-1-x]
+        for x in range(0, len(maxVals)):
+            if label[x] == "causes":
+                totalArray[1]+=1
+                if maxVals[x] >= tempThreshold:
+                    totalArray[0]+=1
+            else:
+                totalArray[3]+=1
+                if maxVals[x] >= tempThreshold:
+                    totalArray[2]+=1
+
+        
+
+        tpr.append(float(totalArray[0]+totalArray[2])/float(totalArray[1]+totalArray[3]))
+        fpr.append(float(totalArray[0])/float(totalArray[0]+totalArray[2]))
+
+        #tempThreshold-=steps
+    #plt.plot(tpr,fpr)
+    #plt.ylabel('True Positive Rate')
+    #plt.xlabel('False Positive Rate')
+    #plt.show()
+
+    from sklearn.model_selection import GridSearchCV  
+    from sklearn.linear_model import SGDClassifier 
+    from sklearn.metrics import roc_curve, auc
 
 
-X_train,X_test,y_train,y_test = train_test_split(maxVals,intEdges,test_size=0.3,random_state=0) 
-X_train= np.array(X_train).reshape(-1, 1)
-X_test = np.array(X_test).reshape(-1, 1)
-
-#instantiate the model
-log_regression = LogisticRegression()
 
 
-#fit the model using the training data
-log_regression.fit(X_train,y_train)
+    X_train,X_test,y_train,y_test = train_test_split(maxVals,intEdges,test_size=0.3,random_state=0) 
+    X_train= np.array(X_train).reshape(-1, 1)
+    X_test = np.array(X_test).reshape(-1, 1)
 
-y_pred_proba = log_regression.predict_proba(X_test)[::,1]
-fpr, tpr, _ = metrics.roc_curve(y_test,  y_pred_proba)
+    model = SGDClassifier(loss='hinge')
+    model.fit(X_train, y_train)
+    # roc_auc_score(y_true, y_score) the 2nd parameter should be probability estimates of the positive class, not the predicted outputs.
 
-print(fpr)
-print(tpr)
-#create ROC curve
-plt.plot(fpr,tpr)
-plt.ylabel('True Positive Rate')
-plt.xlabel('False Positive Rate')
-plt.show()
+    y_train_pred = model.decision_function(X_train)    
+    y_test_pred = model.decision_function(X_test) 
 
+    train_fpr, train_tpr, tr_thresholds = roc_curve(y_train, y_train_pred)
+    test_fpr, test_tpr, te_thresholds = roc_curve(y_test, y_test_pred)
 
-tempY = []
-for x in range(0, len(label)):
-    tempY.append(0)
-df = pd.DataFrame(dict(xPoint=maxVals, yPoint=yPoint, label = label))
+    plt.grid()
 
-
-#df = pd.DataFrame(dict(xPoint=xPoint, yPoint=yPoint, label = label))
-fig, ax = plt.subplots()
-
-colors = {"treats":"red", "causes":"blue"}
-
-ax.scatter(df['xPoint'], df['yPoint'], c=df['label'].map(colors))
-
-#ax.scatter(df['xPoint'], df['yPoint'], c=df['label'].map(colors))
-
-plt.show()
+    plt.plot(train_fpr, train_tpr, label=" AUC TRAIN ="+str(auc(train_fpr, train_tpr)))
+    plt.plot(test_fpr, test_tpr, label=" AUC TEST ="+str(auc(test_fpr, test_tpr)))
+    plt.plot([0,1],[0,1],'g--')
+    plt.legend()
+    plt.xlabel("False Positive Rate")
+    plt.ylabel("True Positive Rate")
+    plt.title("AUC(ROC curve)")
+    plt.grid(color='black', linestyle='-', linewidth=0.5)
+    #plt.show()
 
 
-'''
-df = pd.DataFrame(dict(xPoint=xPoint, yPoint=yPoint, label = label))
-fig, ax = plt.subplots()
 
-colors = {"treats":"red", "causes":"blue"}
 
-ax.scatter(df['xPoint'], df['yPoint'], c=df['label'].map(colors))
-plt.show()
-'''
+    X_train,X_test,y_train,y_test = train_test_split(maxVals,intEdges,test_size=0.3,random_state=0) 
+    X_train= np.array(X_train).reshape(-1, 1)
+    X_test = np.array(X_test).reshape(-1, 1)
+
+    #instantiate the model
+    log_regression = LogisticRegression()
+
+
+    #fit the model using the training data
+    log_regression.fit(X_train,y_train)
+
+    y_pred_proba = log_regression.predict_proba(X_test)[::,1]
+    fpr, tpr, _ = metrics.roc_curve(y_test,  y_pred_proba)
+
+    #create ROC curve
+    plt.plot(fpr,tpr)
+    plt.ylabel('True Positive Rate')
+    plt.xlabel('False Positive Rate')
+    #plt.show()
+    plt.clf()
+
+
+    tempY = []
+    for x in range(0, len(label)):
+        tempY.append(0)
+    df = pd.DataFrame(dict(xPoint=maxVals, yPoint=yPoint, label = label))
+
+
+    #df = pd.DataFrame(dict(xPoint=xPoint, yPoint=yPoint, label = label))
+    fig, ax = plt.subplots()
+
+    colors = {"treats":"red", "causes":"blue"}
+
+    ax.scatter(df['xPoint'], df['yPoint'], c=df['label'].map(colors))
+
+    #ax.scatter(df['xPoint'], df['yPoint'], c=df['label'].map(colors))
+
+    plt.show()
+
+
+    '''
+    df = pd.DataFrame(dict(xPoint=xPoint, yPoint=yPoint, label = label))
+    fig, ax = plt.subplots()
+
+    colors = {"treats":"red", "causes":"blue"}
+
+    ax.scatter(df['xPoint'], df['yPoint'], c=df['label'].map(colors))
+    plt.show()
+    '''
+
+dimensionTest()
